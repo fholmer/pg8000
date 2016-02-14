@@ -1227,7 +1227,7 @@ class Connection(object):
 
     def __init__(
             self, user, host, unix_sock, port, database, password, ssl,
-            timeout):
+            timeout, keyfile, certfile, ca_certs):
         self._client_encoding = "utf8"
         self._commands_with_count = (
             b("INSERT"), b("DELETE"), b("UPDATE"), b("MOVE"),
@@ -1288,7 +1288,9 @@ class Connection(object):
                     self._usock.sendall(ii_pack(8, 80877103))
                     resp = self._usock.recv(1)
                     if resp == b('S'):
-                        self._usock = sslmodule.wrap_socket(self._usock)
+                        self._usock = sslmodule.wrap_socket(
+                          self._usock, keyfile=keyfile, certfile=certfile,
+                          ca_certs=ca_certs)
                     else:
                         raise InterfaceError("Server refuses SSL")
                 except ImportError:
