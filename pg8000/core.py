@@ -8,6 +8,7 @@ from hashlib import md5
 from decimal import Decimal
 from collections import deque, defaultdict
 from itertools import count, islice
+from urllib.parse import urlparse, parse_qsl
 from .six.moves import map
 from .six import b, PY2, integer_types, next, PRE_26, text_type, u, binary_type
 from sys import exc_info
@@ -1227,12 +1228,37 @@ class Connection(object):
 
     def __init__(
             self, user, host, unix_sock, port, database, password, ssl,
-            timeout, keyfile, certfile, ca_certs):
+            timeout, keyfile, certfile, ca_certs, url):
         self._client_encoding = "utf8"
         self._commands_with_count = (
             b("INSERT"), b("DELETE"), b("UPDATE"), b("MOVE"),
             b("FETCH"), b("COPY"), b("SELECT"))
         self._lock = threading.Lock()
+
+        # get parameter from connection-string / url.
+        if url:
+            urlres = urlparse(url)
+            if urlres.scheme == 'postgresql':
+                if urlres.path:
+                    database = urlres.path[1:]
+                if urlres.username:
+                    user = urlres.username
+                if urlres.password:
+                    password = urlres.password
+                if urlres.hostname:
+                    host = urlres.hostname
+                if urlres.port:
+                    port = urlres.port
+                if urlres.query:
+                    for qskey, qsval in parse_qsl(urlres.query):
+                      if qskey == 'sslmode':
+                        ssl = True
+                      elif qskey == 'sslcert':
+                        certfile = qsval
+                      elif qskey == 'sslkey':
+                        keyfile = qsval
+                      elif qskey == 'sslrootcert':
+                        ca_certs = qsval
 
         if user is None:
             try:
