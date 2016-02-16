@@ -1756,12 +1756,12 @@ class Connection(object):
         condition = data[idx:idx + null].decode("ascii")
         idx += null + 1
         null = data.find(NULL_BYTE, idx) - idx
-        # additional_info = data[idx:idx + null]
+        additional_info = data[idx:idx + null].decode("ascii")
 
         # psycopg2 compatible notification interface
         try:
             self.notifies_lock.acquire()
-            self.notifies.append((backend_pid, condition))
+            self.notifies.append((backend_pid, condition, additional_info))
         finally:
             self.notifies_lock.release()
 
